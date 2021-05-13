@@ -1,0 +1,424 @@
+---
+title: "Untitled"
+author: "Irem TANRIVERDI"
+date: "5/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(kableExtra)
+bank<- read.csv(file = "bank-full.csv", head = T, sep=";")
+kbl(psych::headTail(bank,10,10), caption="First and last 10 variables in the data", booktabs = T) %>% kable_styling(latex_options = "striped",font_size=10)
+```
+
+### Data understanding
+
+```{r}
+bank$job<-as.factor(bank$job)
+bank$marital<-as.factor(bank$marital)
+bank$education<-as.factor(bank$education)
+bank$default<-as.factor(bank$default)
+bank$housing<-as.factor(bank$housing)
+
+bank$loan<-as.factor(bank$loan)
+bank$contact<-as.factor(bank$contact)
+bank$poutcome<-as.factor(bank$poutcome)
+#bank$ y<-as.factor(bank$ y)
+```
+
+```{r}
+dim(bank)
+summary(bank)
+```
+
+```{r}
+str(bank)
+```
+
+
+
+```{r}
+library(dplyr)
+# get the row numbers of duplicated rows
+duplicated_rows <- data_frame(duplicated = duplicated(bank), row = 1:nrow(bank)) %>%
+    filter(duplicated == T)
+
+count(duplicated_rows)
+```
+
+```{r}
+library(naniar)
+vis_miss(bank)
+```
+
+
+### Exploratory data Analysis
+
+```{r}
+library(funModeling)
+profiling_num(bank) 
+plot_num(bank) 
+freq(bank) 
+```
+```{r}
+num<-bank[,c(1,6,12:15)]
+dlookr::plot_outlier(num)
+```
+
+```{r}
+for(i in 1: nrow(bank)){
+  if(bank$y[i]=="yes"){
+    bank$y[i]=1
+  }
+  else{
+   bank$y[i]=0 
+  }
+}
+
+bank$y<-as.numeric(bank$y)
+```
+
+
+## Is there any significant relationship between numeric var. and y?
+
+```{r}
+# correlations as taking y numeric( 0 and 1)
+library(corrplot)
+library(PerformanceAnalytics)
+
+numeric<-bank[,c(1,6,12:15,17)]
+
+M <- cor(numeric[,])
+res1 <- cor(M, method="spearman")
+corrplot::corrplot(res1, method= "color", order = "hclust", addCoef.col = "black", 
+         tl.col="black", tl.srt=45
+)
+```
+```{r}
+library(GGally)
+ggpairs(numeric)
+```
+
+
+## Is there any significant relationship between categorical var. and y?
+
+
+```{r}
+library(kableExtra)
+bank<- read.csv(file = "bank-full.csv", head = T, sep=";")
+kbl(psych::headTail(bank,10,10), caption="First and last 10 variables in the data", booktabs = T) %>% kable_styling(latex_options = "striped",font_size=10)
+```
+
+### Data understanding
+
+```{r}
+bank$job<-as.factor(bank$job)
+bank$marital<-as.factor(bank$marital)
+bank$education<-as.factor(bank$education)
+bank$default<-as.factor(bank$default)
+bank$housing<-as.factor(bank$housing)
+
+bank$loan<-as.factor(bank$loan)
+bank$contact<-as.factor(bank$contact)
+bank$poutcome<-as.factor(bank$poutcome)
+#bank$ y<-as.factor(bank$ y)
+```
+
+```{r}
+yes<- bank[bank$y=="yes",]
+no<- bank[bank$y=="no",]
+
+
+y<-yes %>% 
+  select(job, y) %>%  
+  group_by(job) %>% 
+  summarise(n = n())
+
+n<-no %>% 
+  select(job, y) %>%  
+  group_by(job) %>% 
+  summarise(n = n())
+
+
+No<-cbind(n,subscribed=rep("No",12))
+Yes<-cbind(y,subscribed=rep("Yes",12))
+job<-rbind(No,Yes)
+
+
+a<-ggplot(data=job, aes(x=job, y=n, fill=subscribed)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=n), vjust=0.4,hjust=0.1, color="black",
+            position = position_dodge(0.9), size=2.7, fontface="bold")+
+  scale_fill_brewer(palette="Pastel1")+
+  theme_grey()+labs(title = "Job to subscribed a term deposit")+ coord_flip()+ theme(legend.position="top")
+```
+```{r}
+y<-yes %>% 
+  select(marital, y) %>%  
+  group_by(marital) %>% 
+  summarise(n = n())
+
+n<-no %>% 
+  select(marital, y) %>%  
+  group_by(marital) %>% 
+  summarise(n = n())
+
+
+No<-cbind(n,subscribed=rep("No",12))
+Yes<-cbind(y,subscribed=rep("Yes",12))
+marital<-rbind(No,Yes)
+
+
+b<-ggplot(data=marital, aes(x=marital, y=n, fill=subscribed)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=n), vjust=0.4,hjust=1, color="black",
+            position = position_dodge(0.9), size=2.7, fontface="bold")+
+  scale_fill_brewer(palette="Pastel1")+
+  theme_grey()+labs(title = "marital to subscribed a term deposit")+ coord_flip()+ theme(legend.position="none")
+```
+
+
+```{r}
+y<-yes %>% 
+  select(education, y) %>%  
+  group_by(education) %>% 
+  summarise(n = n())
+
+n<-no %>% 
+  select(education, y) %>%  
+  group_by(education) %>% 
+  summarise(n = n())
+
+
+No<-cbind(n,subscribed=rep("No",12))
+Yes<-cbind(y,subscribed=rep("Yes",12))
+education<-rbind(No,Yes)
+
+
+c<-ggplot(data=education, aes(x=education, y=n, fill=subscribed)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=n), vjust=0.4,hjust=0.2, color="black",
+            position = position_dodge(0.9), size=2.7, fontface="bold")+
+  scale_fill_brewer(palette="Pastel1")+
+  theme_grey()+labs(title = "education to subscribed a term deposit")+ coord_flip()+ theme(legend.position="none")
+```
+
+
+```{r}
+y<-yes %>% 
+  select(default, y) %>%  
+  group_by(default) %>% 
+  summarise(n = n())
+
+n<-no %>% 
+  select(default, y) %>%  
+  group_by(default) %>% 
+  summarise(n = n())
+
+
+No<-cbind(n,subscribed=rep("No",12))
+Yes<-cbind(y,subscribed=rep("Yes",12))
+default<-rbind(No,Yes)
+
+
+d<-ggplot(data=default, aes(x=default, y=n, fill=subscribed)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=n), vjust=0.4,hjust=1, color="black",
+            position = position_dodge(0.9), size=2.7, fontface="bold")+
+  scale_fill_brewer(palette="Pastel1")+
+  theme_grey()+labs(title = "default to subscribed a term deposit")+ coord_flip()+ theme(legend.position="none")
+```
+
+```{r}
+y<-yes %>% 
+  select(housing, y) %>%  
+  group_by(housing) %>% 
+  summarise(n = n())
+
+n<-no %>% 
+  select(housing, y) %>%  
+  group_by(housing) %>% 
+  summarise(n = n())
+
+
+No<-cbind(n,subscribed=rep("No",12))
+Yes<-cbind(y,subscribed=rep("Yes",12))
+housing<-rbind(No,Yes)
+
+
+e<-ggplot(data=housing, aes(x=housing, y=n, fill=subscribed)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=n), vjust=0.4,hjust=1.1, color="white",
+            position = position_dodge(0.9), size=2.7, fontface="bold")+
+  scale_fill_brewer(palette="Set1")+
+  theme_grey()+labs(title = "housing to subscribed a term deposit")+ coord_flip()+ theme(legend.position="top")
+```
+```{r}
+y<-yes %>% 
+  select(loan, y) %>%  
+  group_by(loan) %>% 
+  summarise(n = n())
+
+n<-no %>% 
+  select(loan, y) %>%  
+  group_by(loan) %>% 
+  summarise(n = n())
+
+
+No<-cbind(n,subscribed=rep("No",12))
+Yes<-cbind(y,subscribed=rep("Yes",12))
+loan<-rbind(No,Yes)
+
+
+f<-ggplot(data=loan, aes(x=loan, y=n, fill=subscribed)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=n), vjust=0.4,hjust=0.4, color="black",
+            position = position_dodge(0.9), size=2.7, fontface="bold")+
+  scale_fill_brewer(palette="Set1")+
+  theme_grey()+labs(title = "loan to subscribed a term deposit")+ coord_flip()+ theme(legend.position="none")
+```
+
+```{r}
+y<-yes %>% 
+  select(contact, y) %>%  
+  group_by(contact) %>% 
+  summarise(n = n())
+
+n<-no %>% 
+  select(contact, y) %>%  
+  group_by(contact) %>% 
+  summarise(n = n())
+
+
+No<-cbind(n,subscribed=rep("No",12))
+Yes<-cbind(y,subscribed=rep("Yes",12))
+contact<-rbind(No,Yes)
+
+
+g<-ggplot(data=contact, aes(x=contact, y=n, fill=subscribed)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=n), vjust=0.4,hjust=0.2, color="black",
+            position = position_dodge(0.9), size=2.7, fontface="bold")+
+  scale_fill_brewer(palette="Set1")+
+  theme_grey()+labs(title = "contact to subscribed a term deposit")+ coord_flip()+ theme(legend.position="none")
+```
+```{r}
+y<-yes %>% 
+  select(poutcome, y) %>%  
+  group_by(poutcome) %>% 
+  summarise(n = n())
+
+n<-no %>% 
+  select(poutcome, y) %>%  
+  group_by(poutcome) %>% 
+  summarise(n = n())
+
+
+No<-cbind(n,subscribed=rep("No",12))
+Yes<-cbind(y,subscribed=rep("Yes",12))
+poutcome<-rbind(No,Yes)
+
+
+h<-ggplot(data=poutcome, aes(x=poutcome, y=n, fill=subscribed)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=n), vjust=0.4,hjust=0.2, color="black",
+            position = position_dodge(0.9), size=2.7, fontface="bold")+
+  scale_fill_brewer(palette="Set1")+
+  theme_grey()+labs(title = "poutcome to subscribed a term deposit")+ coord_flip()+ theme(legend.position="none")
+```
+
+```{r}
+library(ggpubr)
+ggarrange(a,b,c,d,nrow=2,ncol=2)
+ggarrange(e,f,g,h,nrow=2,ncol=2)
+
+```
+
+
+```{r}
+chis <- lapply(bank[,c(2:5,7:9,16)], function(x) chisq.test(bank[,c(17)],x,simulate.p.value=TRUE))
+do.call(rbind, chis)[,c(1,3)]
+```
+
+
+
+### Data Preparation
+
+we see that in EDA part, in response variable, "no" class proportion is 88.3 while "yes" class proportion is 11.7. There is huge difference difference between two class. Thus, we have imbalance data and it causes reduction in accuracy of ML algorithms.
+
+What are the methods to deal with imbalanced data sets ?
+
+The methods are widely known as ‘Sampling Methods’. Generally, these methods aim to modify an imbalanced data into balanced distribution using some mechanism. The modification occurs by altering the size of original data set and provide the same proportion of balance.
+
+Below are the methods used to treat imbalanced datasets:
+
+Undersampling
+Oversampling
+Synthetic Data Generation
+Cost Sensitive Learning
+
+```{r}
+library(ROSE)
+#data.rose <- ROSE(y ~ ., data = bank, seed = 1, N = 45211)
+```
+
+```{r}
+data_balanced_under <- ovun.sample(y ~ ., data = bank, method = "under", N = 5290, seed = 1)$data
+table(data_balanced_under$y)
+```
+
+```{r}
+data_balanced_both <- ovun.sample(y ~ ., data = bank, method = "both", p=0.5, N=45211, seed = 1)$data
+table(data_balanced_both$y)
+```
+
+```{r}
+data_balanced_over <- ovun.sample(y ~ ., data = bank, method = "over",N = 45211)$data
+table(data_balanced_over$y)
+```
+
+
+
+```{r}
+inst_pack_func <- function(list.of.packages){
+  new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+  if(length(new.packages)) install.packages(new.packages)
+  lapply(list.of.packages,function(x){library(x,character.only=TRUE)})
+}
+
+list.of.packages <- c("ggplot2","dplyr","stats4","splines","VGAM","rsample","rpart","rpart.plot","ipred","caret","MVN")
+inst_pack_func(list.of.packages)
+```
+
+
+```{r}
+set.seed(123)
+split <- initial_split(bank, prop = .8)
+train1 <- training(split)
+test  <- testing(split)
+nrow(train1)
+nrow(test)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
